@@ -1,0 +1,114 @@
+name: CD - Build, Push & Deploy (ECS)
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: 887540997367
+  
+  # Repo Names
+  ECR_WRITER_REPO: simple-writer
+  ECR_READER_REPO: simple-reader
+
+  # ECS Details
+  ECS_CLUSTER: mlops-cluster
+  ECS_SERVICE: mlops-service
+  ECS_TASK_FAMILY: mlops-efs-task # Must match "family" in JSON
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ------------------
+      # AWS AUTH
+      # ------------------
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ------------------
+      # BUILD & PUSH IMAGES
+      # ------------------
+      - name: Build & push Writer
+        run: |
+          # Changed to build from ./writer folder
+          docker build -t $ECR_WRITER_REPO:latest ./writer
+          
+          docker tag $ECR_WRITER_REPO:latest \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_WRITER_REPO:latest
+          
+          docker push \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_WRITER_REPO:latest
+
+      - name: Build & push Reader
+        run: |
+          # Changed to build from ./reader folder
+          docker build -t $ECR_READER_REPO:latest ./reader
+          
+          docker tag $ECR_READER_REPO:latest \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_READER_REPO:latest
+          
+          docker push \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_READER_REPO:latest
+
+      # ------------------
+      # FILL IN SECRETS (envsubst)
+      # ------------------
+      - name: Render ECS task definition
+        env:
+          # 1. Define Images
+          WRITER_IMAGE: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_WRITER_REPO }}:latest
+          READER_IMAGE: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_READER_REPO }}:latest
+          
+          # 2. Map Secrets (Must be set in GitHub Repo Secrets)
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          EFS_ID:  ${{ secrets.EFS_ID }}
+          
+          # 3. Map Config Vars
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_NAME: mlops_lab_db
+        run: |
+          # envsubst replaces all ${VAR} in the file with the env vars above
+          envsubst < ecs/task-definition.json > ecs/task-def-rendered.json
+          
+          # Optional: Verify it worked (don't cat the file or you leak secrets!)
+          echo "Task definition rendered successfully."
+
+      # ------------------
+      # DEPLOY
+      # ------------------
+      - name: Register new task definition
+        id: register-task
+        run: |
+          aws ecs register-task-definition \
+            --cli-input-json file://ecs/task-def-rendered.json
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --task-definition $ECS_TASK_FAMILY \
+            --force-new-deployment
+
+      - name: Wait for stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $ECS_SERVICE

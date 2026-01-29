@@ -1,32 +1,65 @@
 {
   "family": "mlops-efs-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::887540997367:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::887540997367:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
       "name": "writer",
       "image": "887540997367.dkr.ecr.us-east-1.amazonaws.com/simple-writer:latest",
+      "essential": true,
       "mountPoints": [
-        { "sourceVolume": "efs-volume", "containerPath": "/app/shared", "readOnly": false }
-      ]
+        {
+          "sourceVolume": "efs-volume",
+          "containerPath": "/app/shared",
+          "readOnly": false
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mlops-efs-task",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "writer"
+        }
+      }
     },
     {
       "name": "reader",
       "image": "887540997367.dkr.ecr.us-east-1.amazonaws.com/simple-reader:latest",
+      "essential": true,
       "mountPoints": [
-        { "sourceVolume": "efs-volume", "containerPath": "/app/shared", "readOnly": true }
+        {
+          "sourceVolume": "efs-volume",
+          "containerPath": "/app/shared",
+          "readOnly": true
+        }
       ],
       "environment": [
-        { "name": "DB_HOST", "value": "YOUR_RDS_ENDPOINT_HERE" },
-        { "name": "DB_USER", "value": "mlops_admin" },
-        { "name": "DB_PASS", "value": "SuperSecretPassword123!" },
-        { "name": "DB_NAME", "value": "mlops_db" }
-      ]
+        { "name": "DB_HOST", "value": "${DB_HOST}" },
+        { "name": "DB_PORT", "value": "${DB_PORT}" },
+        { "name": "DB_USER", "value": "${DB_USER}" },
+        { "name": "DB_PASS", "value": "${DB_PASS}" },
+        { "name": "DB_NAME", "value": "${DB_NAME}" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mlops-efs-task",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "reader"
+        }
+      }
     }
   ],
   "volumes": [
     {
       "name": "efs-volume",
       "efsVolumeConfiguration": {
-        "fileSystemId": "fs-XXXXXXX",
+        "fileSystemId": "${EFS_ID}",
         "rootDirectory": "/"
       }
     }

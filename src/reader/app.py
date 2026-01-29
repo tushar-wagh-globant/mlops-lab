@@ -1,5 +1,8 @@
 import psycopg2
 import os
+import time
+
+
 # Load Config from Environment Variables
 # These now come from the .env file passed by Docker
 DB_HOST = os.getenv("DB_HOST", "db")
