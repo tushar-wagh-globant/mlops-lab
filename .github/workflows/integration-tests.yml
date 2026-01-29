@@ -12,32 +12,47 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ------------------
+      # START SERVICES
+      # ------------------
       - name: Start services
         run: |
-          docker-compose up -d
+          docker compose up -d
           sleep 15
 
       - name: Wait for health
         run: |
-          timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
-          timeout 60 bash -c 'until curl -f http://localhost:8001/health; do sleep 2; done'
+          timeout 60 bash -c 'until curl -f --connect-timeout 2 --max-time 5 http://localhost:8000/health; do sleep 2; done'
+          timeout 60 bash -c 'until curl -f --connect-timeout 2 --max-time 5 http://localhost:8001/health; do sleep 2; done'
 
+      # ------------------
+      # PYTHON + TESTS
+      # ------------------
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}
+
       - name: Run integration tests
         run: |
-          uv venv
+          uv venv --python 3.11
           source .venv/bin/activate
           uv pip install pytest requests
           pytest tests/integration/ -v
 
+      # ------------------
+      # DEBUG & CLEANUP
+      # ------------------
       - name: Logs on failure
         if: failure()
-        run: docker-compose logs
+        run: docker compose logs
 
       - name: Cleanup
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v

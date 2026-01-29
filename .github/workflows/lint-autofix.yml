@@ -31,9 +31,15 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}
+
       - name: Install lint tools
         run: |
-          uv venv
+          uv venv --python $PYTHON_VERSION
           source .venv/bin/activate
           uv pip install black isort flake8 mypy
 
@@ -64,6 +70,4 @@ jobs:
             git add .
             git commit -m "ci: auto-fix lint & formatting"
             git push
-          fi
-
           fi

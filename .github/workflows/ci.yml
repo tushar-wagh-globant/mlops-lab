@@ -42,7 +42,7 @@ jobs:
 
       - name: Install deps (writer)
         run: |
-          cd writer
+          cd src/writer
           uv venv
           source .venv/bin/activate
           uv sync --all-extras
@@ -51,9 +51,9 @@ jobs:
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
         run: |
-          cd writer
+          cd src/writer
           source .venv/bin/activate
-          pytest ../tests/unit/test_writer.py -v --cov=. --cov-report=xml
+          pytest ../../tests/unit/test_writer.py -v --cov=. --cov-report=xml
 
   test-reader:
     runs-on: ubuntu-latest
@@ -72,13 +72,13 @@ jobs:
 
       - name: Install deps (reader)
         run: |
-          cd reader
+          cd src/reader
           uv venv
           source .venv/bin/activate
           uv sync --all-extras
 
       - name: Run reader tests
         run: |
-          cd reader
+          cd src/reader
           source .venv/bin/activate
-          pytest ../tests/unit/test_reader.py -v --cov=. --cov-report=xml
+          pytest ../../tests/unit/test_reader.py -v --cov=. --cov-report=xml
