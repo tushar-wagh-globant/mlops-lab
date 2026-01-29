@@ -1,0 +1,34 @@
+{
+  "family": "mlops-efs-task",
+  "containerDefinitions": [
+    {
+      "name": "writer",
+      "image": "887540997367.dkr.ecr.us-east-1.amazonaws.com/simple-writer:latest",
+      "mountPoints": [
+        { "sourceVolume": "efs-volume", "containerPath": "/app/shared", "readOnly": false }
+      ]
+    },
+    {
+      "name": "reader",
+      "image": "887540997367.dkr.ecr.us-east-1.amazonaws.com/simple-reader:latest",
+      "mountPoints": [
+        { "sourceVolume": "efs-volume", "containerPath": "/app/shared", "readOnly": true }
+      ],
+      "environment": [
+        { "name": "DB_HOST", "value": "YOUR_RDS_ENDPOINT_HERE" },
+        { "name": "DB_USER", "value": "mlops_admin" },
+        { "name": "DB_PASS", "value": "SuperSecretPassword123!" },
+        { "name": "DB_NAME", "value": "mlops_db" }
+      ]
+    }
+  ],
+  "volumes": [
+    {
+      "name": "efs-volume",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-XXXXXXX",
+        "rootDirectory": "/"
+      }
+    }
+  ]
+}

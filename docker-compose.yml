@@ -1,0 +1,38 @@
+services:
+  writer:
+    build: ./writer
+    volumes:
+      - ./config:/app/config
+      - shared_data:/app/shared
+
+  reader:
+    build: ./reader
+    # Load environment variables from the .env file
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      # Map internal var names to .env values if they differ, 
+      # or just let env_file handle it if code matches.
+      # Here we explicitly map for clarity:
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+    volumes:
+      - shared_data:/app/shared
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13-alpine
+    # Load .env here too so Postgres creates the user correctly
+    env_file:
+      - .env
+    environment:
+      # Postgres official image uses these specific keys:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+
+volumes:
+  shared_data:
