@@ -1,0 +1,29 @@
+# writer/pyproject.toml
+[project]
+name = "mlops-writer"
+version = "0.1.0"
+description = "Writer service - writes to DB and shared volume"
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "sqlalchemy>=2.0.23",
+    "psycopg2-binary>=2.9.9",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.24.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

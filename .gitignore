@@ -1,3 +1,8 @@
+# UV
+.venv/
+uv.lock  # Optional - commit this for reproducibility
+.python-version
+
 # Python
 __pycache__/
 *.py[cod]
@@ -20,46 +25,29 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
-venv/
-env/
-ENV/
-.venv
-
-# Jupyter Notebook
-.ipynb_checkpoints
-*.ipynb_checkpoints/
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
 
 # IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# AWS
-.aws/
-*.pem
-
-# Environment variables
+# Environment
 .env
 .env.local
-
-# Model artifacts
-*.pkl
-*.joblib
-models/
-
-# Data
-data/*.csv
-!data/.gitkeep
-
-# Logs
-*.log
+.env.*.local
 
 # OS
 .DS_Store
 Thumbs.db
 
-# SageMaker local
-.sagemaker/
+# Data
+data/
+*.db
+*.sqlite
