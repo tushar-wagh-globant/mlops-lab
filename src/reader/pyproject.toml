@@ -1,6 +1,6 @@
 # reader/pyproject.toml
 [project]
-name = "mlops-reader"
+name = "reader"
 version = "0.1.0"
 description = "Reader service - reads from shared volume"
 requires-python = ">=3.11"
