@@ -1,6 +1,6 @@
 # writer/pyproject.toml
 [project]
-name = "mlops-writer"
+name = "writer"
 version = "0.1.0"
 description = "Writer service - writes to DB and shared volume"
 requires-python = ">=3.11"
